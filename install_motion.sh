@@ -16,7 +16,7 @@
   chown pi:pi /var/log/motion
   openssl rand -base64 512 >/home/pi/.motion
   cd /usr/local/bin
-  ln -s motion.py motion
+  ln -sf motion.py motion
   python -m compileall motion.py
   chmod 644 motion.pyc
   update-rc.d motion defaults

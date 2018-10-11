@@ -14,7 +14,7 @@
   mkdir -p /var/log/wiimote
   chown pi:pi /var/log/wiimote
   cd /usr/local/bin
-  ln -s wiimote.py wiimote
+  ln -sf wiimote.py wiimote
   update-rc.d wiimote defaults
   service wiimote start
 }
