@@ -7,7 +7,7 @@
 }
 [[ x$1 == 'x-i' ]] && {
   export DIR=$(dirname $(readlink -f $0))
-  openssl rand -base64 512 -out /home/pi/.motion
+  openssl rand -base64 -out /home/pi/.motion 512
   chown pi:pi /home/pi/.motion
   cp $DIR/motion.py /usr/local/bin/motion.py
   cp $DIR/motion.sh /etc/init.d/motion
