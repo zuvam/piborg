@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """Motion controller module for DiddyBorg"""
-from os import getpid
-from sys import exit
-from signal import signal, SIGTERM
 from multiprocessing.connection import Listener, Client, AuthenticationError
-from threading import Thread, Event, active_count
+from os import getpid
+from signal import signal, SIGTERM
 from smbus import SMBus
+from threading import Thread, Event, active_count
 
 I2CBUS, I2CADDRESS = 1, 0x44  # i2cbus number and address of the PiBorgReverse (PBR) board
 HEARTBEAT, TIMEOUT = 0.2, 20  # Time interval to send heartbeat to PBR and silence interval before switching off motors
-PWM_MAX = int(255.0 * 12.0 / 14.4)  # Max value of PWM to scale down 14.4 V input to max 12 V
+PWM_MAX = int(255.0 * 12.0 / 18.0)  # Max value of PWM to scale down 18 V input to max 12 V
 I2C_MAX_LEN = 4  # Max length of PBR response
 I2C_ID_PICOBORG_REV = 0x15  # PBR identifer value
 SET_LED = 1  # Set the LED status
@@ -82,7 +81,7 @@ class MotionControlServer():
         self.__timeout = Event()
         self.__funcs = dict([(f[25:], getattr(self, f)) for f in dir(self) if f[0:25] == '_MotionControlServer__x__'])
         self.__pid = getpid()
-        signal(SIGTERM, self.__sigterm)
+        signal(SIGTERM, self.__sigterm__)
 
     def start(self):
         """start the Motion Control Server
@@ -93,23 +92,20 @@ class MotionControlServer():
                        Connections authkey authenticated by token
         Wait for heartbeat and watchdog to finish
         """
-        if self.__connect_pbr():
-            self.__run.set()
-            self.__updated.set()
-            self.__timeout.set()
-            heartbeat = Thread(target=self.__heartbeat)
-            watchdog = Thread(target=self.__watchdog)
-            listener = Thread(target=self.__listen)
-            listener.daemon = True
-            watchdog.start()
-            heartbeat.start()
-            listener.start()
-            heartbeat.join()
-            watchdog.join()
-        else:
-            exit(1)
+        self.__run.set()
+        self.__updated.set()
+        self.__timeout.set()
+        heartbeat = Thread(target=self.__heartbeat__)
+        watchdog = Thread(target=self.__watchdog__)
+        listener = Thread(target=self.__listen__)
+        listener.daemon = True
+        watchdog.start()
+        heartbeat.start()
+        listener.start()
+        heartbeat.join()
+        watchdog.join()
 
-    def __heartbeat(self):
+    def __heartbeat__(self):
         """Send motor PWM and LED state to the PicoBorgRev module when updated, otherwise every HEARTBEAT interval"""
         while read_i2c(GET_FAILSAFE) == 0: write_i2c(SET_FAILSAFE, 1)
         while self.__run.is_set():
@@ -121,7 +117,7 @@ class MotionControlServer():
         write_i2c(SET_B_FWD, 0)
         write_i2c(SET_LED, 0)
 
-    def __watchdog(self):
+    def __watchdog__(self):
         """Set motor PWM and LED State to 0 (off) if no interaction for more than TIMEOUT interval"""
         while self.__run.is_set():
             if self.__timeout.wait(TIMEOUT):
@@ -129,25 +125,27 @@ class MotionControlServer():
             else:
                 self.__cmds = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
 
-    def __listen(self):
+    def __listen__(self):
         """Start listening for connections and assign handler thread for new connections"""
         server = Listener((self.__ip, self.__port), authkey=self.__token)
         while self.__run.is_set():
             try:
                 connect = server.accept()
-                thread = Thread(target=self.__handle, args=(connect,))
+                thread = Thread(target=self.__handle__, args=(connect,))
                 thread.daemon = True
                 thread.start()
             except AuthenticationError:
                 pass
         server.close()
 
-    def __handle(self, conn):
+    def __handle__(self, conn):
         """accept commands via connection (conn), handle and respond; recieve verb aka function to execute, arguments and named arguments; send result object or exception"""
         inuse = True
         while inuse:
-            try: verb, args, kwargs = conn.recv()
-            except: conn.send(Exception('bad request'))
+            try:
+                verb, args, kwargs = conn.recv()
+            except:
+                conn.send(Exception('bad request'))
             self.__timeout.set()
             if verb in ('bye', 'close', 'exit'):
                 inuse = False
@@ -158,12 +156,7 @@ class MotionControlServer():
                     conn.send(e)
         conn.close()
 
-    def __connect_pbr(self):
-        """return whether i2c module at I2CADDRESS is PicoBorgRev (True) or not (False) based on ID"""
-        i2c_data = read_i2c(GET_ID)
-        return len(i2c_data) == I2C_MAX_LEN and i2c_data[1] == I2C_ID_PICOBORG_REV
-
-    def __sigterm(self, signum, frame):
+    def __sigterm__(self, signum, frame):
         """handler function for sigterm"""
         self.__x__stop()
 
@@ -283,6 +276,7 @@ class MotionController(object):
         attribute(args) = RPC(args)
         RPC: send attribute and arguments to Motion Control Server over connection and return recieved object or raise recieved exception 
         """
+
         def attribute(*args, **kwargs):
             self.connection.send((item, args, kwargs))
             val = self.connection.recv()
@@ -309,7 +303,8 @@ if __name__ == '__main__':
         try:
             with MotionController() as m:
                 for item in m.help(): print('    {0:<30s}-> {1}'.format(*item))
-        except Exception as e: print(e.msg)
+        except Exception as e:
+            print(e.msg)
         print('\nLibrary usage:')
         print(MotionControlServer.__doc__)
         print(MotionController.__doc__)
@@ -319,4 +314,5 @@ if __name__ == '__main__':
         try:
             with MotionController() as m:
                 print(getattr(m, argv[1])(*[float(i) for i in argv[2:]]))
-        except Exception as e: print(e.msg)
+        except Exception as e:
+            print(e.msg)
