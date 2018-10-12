@@ -6,7 +6,7 @@ import sys
 from signal import signal, SIGTERM
 from time import sleep
 
-from motor_server import MotorController
+from motion import MotionController
 
 sys.stderr = os.fdopen(os.dup(2), "w")
 os.dup2(os.open(os.devnull, os.O_WRONLY), 2)
@@ -57,7 +57,7 @@ if __name__ == '__main__':
                 wii.led = WII_LED
                 rumble(wii, 0.2)
                 try:
-                    with MotorController() as mc:
+                    with MotionController() as mc:
                         while running:
                             try:
                                 buttons = wii.state['buttons']

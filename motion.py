@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-""" Motor controller module for DiddyBorg """
+""" Motion controller module for DiddyBorg """
 from multiprocessing.connection import Listener, Client, AuthenticationError
 from os import getpid
 from signal import signal, SIGTERM
@@ -28,7 +28,7 @@ A_DIR = (0, -1, 1)
 B_DIR = (0, 1, -1)
 
 IP, PORT = '0.0.0.0', 1092  # Default address on which to listen for drive commands
-AUTH_KEY_FILE = '/home/pi/.motor_server'  # Default authkey for the connection
+AUTH_KEY_FILE = '/home/pi/.motion'  # Default authkey for the connection
 with open(AUTH_KEY_FILE, 'r') as auth_file: TOKEN = auth_file.read().replace('\n', '')
 
 i2c_bus = SMBus(I2CBUS)  # i2c bus used
@@ -59,31 +59,32 @@ def write_i2c(offset, byteVal):
         return True
 
 
-class MotorControlServer():
-    """Motor Control Server for DiddyBorg
+class MotionControlServer():
+    """Motion Control Server for DiddyBorg
     Example:
-    from motor_server import MotorControlServer
-    mcs = MotorControlServer()
+    from motion import MotionControlServer
+    mcs = MotionControlServer()
     mcs.start()
     """
 
     def __init__(self, ip_address=IP, ip_port=PORT, token=TOKEN):
-        """Initialize Motor Control Server
+        """Initialize Motion Control Server
         :param ip_address: IP address (localhost or external IP address), default is 127.0.0.1
         :param ip_port: port number, default is 1092
         :param token: authkey, default is read from /home/pi/.motion
+        :return: MotionControlServer
         """
-        self.__ip__, self.__port__, self.__token__ = ip_address, ip_port, token
-        self.__cmds__ = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
-        self.__run__ = Event()
-        self.__updated__ = Event()
-        self.__timeout__ = Event()
-        self.__funcs__ = dict([(f[25:], getattr(self, f)) for f in dir(self) if f[0:25] == '_MotorControlServer__x__'])
-        self.__pid__ = getpid()
+        self.__ip, self.__port, self.__token = ip_address, ip_port, token
+        self.__cmds = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
+        self.__run = Event()
+        self.__updated = Event()
+        self.__timeout = Event()
+        self.__funcs = dict([(f[25:], getattr(self, f)) for f in dir(self) if f[0:25] == '_MotionControlServer__x__'])
+        self.__pid = getpid()
         signal(SIGTERM, self.__sigterm__)
 
     def start(self):
-        """start the Motor Control Server
+        """start the Motion Control Server
         Start three threads:
             heartbeat - communicates with the PicoBorgRev
             watchdog - stops the motors if inactive for timeout
@@ -92,9 +93,9 @@ class MotorControlServer():
         Wait for heartbeat and watchdog to finish
         """
         # if self.__connect_pbr__: # to be debugged
-        self.__run__.set()
-        self.__updated__.set()
-        self.__timeout__.set()
+        self.__run.set()
+        self.__updated.set()
+        self.__timeout.set()
         heartbeat = Thread(target=self.__heartbeat__)
         watchdog = Thread(target=self.__watchdog__)
         listener = Thread(target=self.__listen__)
@@ -111,9 +112,9 @@ class MotorControlServer():
     def __heartbeat__(self):
         """Send motor PWM and LED state to the PicoBorgRev module when updated, otherwise every HEARTBEAT interval"""
         while read_i2c(GET_FAILSAFE) == 0: write_i2c(SET_FAILSAFE, 1)
-        while self.__run__.is_set():
-            if self.__updated__.wait(HEARTBEAT): self.__updated__.clear()
-            for cmd in self.__cmds__: write_i2c(*cmd)
+        while self.__run.is_set():
+            if self.__updated.wait(HEARTBEAT): self.__updated.clear()
+            for cmd in self.__cmds: write_i2c(*cmd)
         write_i2c(SET_FAILSAFE, 0)
         write_i2c(RESET_EPO, 0)
         write_i2c(SET_A_FWD, 0)
@@ -122,16 +123,16 @@ class MotorControlServer():
 
     def __watchdog__(self):
         """Set motor PWM and LED State to 0 (off) if no interaction for more than TIMEOUT interval"""
-        while self.__run__.is_set():
-            if self.__timeout__.wait(TIMEOUT):
-                self.__timeout__.clear()
+        while self.__run.is_set():
+            if self.__timeout.wait(TIMEOUT):
+                self.__timeout.clear()
             else:
-                self.__cmds__ = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
+                self.__cmds = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
 
     def __listen__(self):
         """Start listening for connections and assign handler thread for new connections"""
-        server = Listener((self.__ip__, self.__port__), authkey=self.__token__)
-        while self.__run__.is_set():
+        server = Listener((self.__ip, self.__port), authkey=self.__token)
+        while self.__run.is_set():
             try:
                 connect = server.accept()
                 thread = Thread(target=self.__handle__, args=(connect,))
@@ -148,18 +149,15 @@ class MotorControlServer():
             try:
                 verb, args, kwargs = conn.recv()
             except:
-                print(str(e))
                 conn.send(Exception('bad request'))
+            self.__timeout.set()
+            if verb in ('bye', 'close', 'exit'):
+                inuse = False
             else:
-                self.__timeout__.set()
-                if verb in ('bye', 'close', 'exit'):
-                    inuse = False
-                else:
-                    try:
-                        conn.send(self.__funcs__[verb](*args, **kwargs))
-                    except Exception as e:
-                        print(str(e))
-                        conn.send(e)
+                try:
+                    conn.send(self.__funcs[verb](*args, **kwargs))
+                except Exception as e:
+                    conn.send(e)
         conn.close()
 
     @property
@@ -174,14 +172,14 @@ class MotorControlServer():
 
     def __x__stop(self):
         """send stop event to all active threads, returns pid and number of active threads"""
-        self.__run__.clear()
-        self.__timeout__.set()
-        self.__updated__.set()
-        return ('pid', self.__pid__), ('threads', active_count())
+        self.__run.clear()
+        self.__timeout.set()
+        self.__updated.set()
+        return ('pid', self.__pid), ('threads', active_count())
 
     def __x__status(self):
         """return motor direction and PWM setting, LED state, pid, and number of active threads"""
-        return self.__x__get_velocity() + self.__x__get_led() + (('pid', self.__pid__), ('threads', active_count()))
+        return self.__x__get_velocity() + self.__x__get_led() + (('pid', self.__pid), ('threads', active_count()))
 
     def __x__get_velocity(self):
         """return motor direction and PWM setting"""
@@ -192,8 +190,9 @@ class MotorControlServer():
         """set linear velocity and angular velocity, accept values between -1.0 and 1.0, default angular is 0.0"""
         assert is_norm_one(linear) and is_norm_one(angular)
         pwm_r, pwm_l = norm_pwm(PWM_MAX * (linear + angular)), norm_pwm(PWM_MAX * (linear - angular))
-        self.__cmds__ = (SET_A_REV, -pwm_r) if pwm_r < 0 else (SET_A_FWD, pwm_r), (SET_B_REV, -pwm_l) if pwm_l < 0 else (SET_B_FWD, pwm_l)
-        self.__updated__.set()
+        self.__cmds = (SET_A_REV, -pwm_r) if pwm_r < 0 else (SET_A_FWD, pwm_r), (SET_B_REV, -pwm_l) if pwm_l < 0 else (
+            SET_B_FWD, pwm_l)
+        self.__updated.set()
         return ('linear', linear), ('angular', angular), ('motorA', pwm_r), ('motorB', pwm_l)
 
     def __x__get_led(self):
@@ -203,8 +202,8 @@ class MotorControlServer():
     def __x__set_led(self, on_off_num):
         """set LED state, accept any number 0 -> OFF and non-zero number -> ON"""
         on_off = 1 if on_off_num else 0
-        self.__cmds__ += (SET_LED, on_off),
-        self.__updated__.set()
+        self.__cmds += (SET_LED, on_off),
+        self.__updated.set()
         return ('led', 'ON' if on_off == 1 else 'OFF'),
 
     def __x__get_id(self):
@@ -213,21 +212,21 @@ class MotorControlServer():
 
     def __x__get_pid(self):
         """return pid"""
-        return ('id', self.__pid__),
+        return ('id', self.__pid),
 
     def __x__help(self):
         """return docstrings of available functions"""
         return tuple((n + '(' + ', '.join(f.__code__.co_varnames[1:f.__code__.co_argcount]) + ')', f.__doc__)
-                     for (n, f) in sorted(self.__funcs__.items(), key=lambda x: x[1].__code__.co_firstlineno))
+                     for (n, f) in sorted(self.__funcs.items(), key=lambda x: x[1].__code__.co_firstlineno))
 
 
-class MotorController(object):
-    """Client for Motor Control Server for DiddyBorg
+class MotionController(object):
+    """Client for Motion Control Server for DiddyBorg
     Example:
-    from motion import MotorController
+    from motion import MotionController
     try:
         list_steps = [(1.0,0),(-1.0,0),(0,1.0),(0,-1.0),(0,0)] # forward, reverse, spin clockwise, spin counter, stop
-        with MotorController() as mc:
+        with MotionController() as mc:
             mc.set_led(1)
             for linear, angular in list_steps:
                 mc.set_velocity(linear, angular)
@@ -237,11 +236,11 @@ class MotorController(object):
         print(e.msg)
 
     Example:
-    from motion import MotorController
+    from motion import MotionController
     remote_host='192.168.1.1'
     token='shared authToken'
     try:
-        with MotorController(remote_host, 1092, token) as mc:
+        with MotionController(remote_host, 1092, token) as mc:
             print(mc.help())
             mc.set_velocity(0.0,0.0)
     Except Exception as e:
@@ -249,10 +248,11 @@ class MotorController(object):
     """
 
     def __init__(self, ip_address=IP, ip_port=PORT, token=TOKEN):
-        """connect to Motor Control Server at ip_address:ip_port using AuthKey token
+        """connect to Motion Control Server at ip_address:ip_port using AuthKey token
         :param ip_address: IP address (localhost or external IP address), default is 127.0.0.1
         :param ip_port: port number, default is 1092
         :param token: authkey, default is read from /home/pi/.motion
+        :return: MotionController
         """
         try:
             self.connection = Client((ip_address, ip_port), authkey=token)
@@ -272,7 +272,7 @@ class MotorController(object):
         return self.close()
 
     def close(self):
-        """close connection with Motor Control Server and return False"""
+        """close connection with Motion Control Server and return False"""
         try:
             self.connection.send(('bye', None, None))
             self.connection.close()
@@ -284,7 +284,7 @@ class MotorController(object):
     def __getattr__(self, item):
         """custom attribute getter
         attribute(args) = RPC(args)
-        RPC: send attribute and arguments to Motor Control Server over connection and return recieved object or raise recieved exception
+        RPC: send attribute and arguments to Motion Control Server over connection and return recieved object or raise recieved exception 
         """
 
         def attribute(*args, **kwargs):
@@ -297,12 +297,12 @@ class MotorController(object):
 
 
 if __name__ == '__main__':
-    __doc__ = """Command line interface for Motor Control Server
+    __doc__ = """Command line interface for Motion Control Server
     Usage:
     motion                        -> display CLI usage
     motion help|h|-h              -> display CLI and library usage
-    motion start|s|-s             -> start the Motor Control Server (to be used within a start-up script), by default listens on 127.0.0.1:1092
-    motion cmd [nums]             -> RPC execute cmd(*nums) on Motor Control Server and print returned object """
+    motion start|s|-s             -> start the Motion Control Server (to be used within a start-up script), by default listens on 127.0.0.1:1092
+    motion cmd [nums]             -> RPC execute cmd(*nums) on Motion Control Server and print returned object """
     from sys import argv
 
     if len(argv) == 1:
@@ -311,18 +311,18 @@ if __name__ == '__main__':
         print(__doc__)
         print("Available cmd's:")
         try:
-            with MotorController() as m:
+            with MotionController() as m:
                 for item in m.help(): print('    {0:<30s}-> {1}'.format(*item))
         except Exception as e:
-            print(str(e))
+            print(e.msg)
         print('\nLibrary usage:')
-        print(MotorControlServer.__doc__)
-        print(MotorController.__doc__)
+        print(MotionControlServer.__doc__)
+        print(MotionController.__doc__)
     elif argv[1] in ('s', '-s', 'start'):
-        MotorControlServer().start()
+        MotionControlServer().start()
     else:
         try:
-            with MotorController() as m:
+            with MotionController() as m:
                 print(getattr(m, argv[1])(*[float(i) for i in argv[2:]]))
         except Exception as e:
-            print(str(e))
+            print(e.msg)
