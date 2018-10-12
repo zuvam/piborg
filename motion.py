@@ -92,22 +92,22 @@ class MotionControlServer():
                        Connections authkey authenticated by token
         Wait for heartbeat and watchdog to finish
         """
-        if self.__connect_pbr__:
-            self.__run.set()
-            self.__updated.set()
-            self.__timeout.set()
-            heartbeat = Thread(target=self.__heartbeat__)
-            watchdog = Thread(target=self.__watchdog__)
-            listener = Thread(target=self.__listen__)
-            listener.daemon = True
-            watchdog.start()
-            heartbeat.start()
-            listener.start()
-            heartbeat.join()
-            watchdog.join()
-        else:
-            print('check hardware')
-            exit(1)
+        # if self.__connect_pbr__: # to be debugged
+        self.__run.set()
+        self.__updated.set()
+        self.__timeout.set()
+        heartbeat = Thread(target=self.__heartbeat__)
+        watchdog = Thread(target=self.__watchdog__)
+        listener = Thread(target=self.__listen__)
+        listener.daemon = True
+        watchdog.start()
+        heartbeat.start()
+        listener.start()
+        heartbeat.join()
+        watchdog.join()
+        # else:
+        #     print('check hardware')
+        #     exit(1)
 
     def __heartbeat__(self):
         """Send motor PWM and LED state to the PicoBorgRev module when updated, otherwise every HEARTBEAT interval"""
