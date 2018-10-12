@@ -6,7 +6,7 @@ import sys
 from signal import signal, SIGTERM
 from time import sleep
 
-from motor_server import MotorController
+from motor_server.motor_server import MotorController
 
 sys.stderr = os.fdopen(os.dup(2), "w")
 os.dup2(os.open(os.devnull, os.O_WRONLY), 2)
@@ -51,7 +51,8 @@ try:
         while wii is None and running:
             try:
                 wii = cwiid.Wiimote()
-            except RuntimeError:
+            except RuntimeError as e:
+                print(str(e))
                 sleep(1)
         if wii is not None:
             wii.rpt_mode = cwiid.RPT_BTN

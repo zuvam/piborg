@@ -14,10 +14,8 @@ Connect to your raspberrypi, clone this repo and run the install scripts
 ```bash
 git clone https://github.com/zuvam/piborg.git
 cd piborg
-sudo ./install_motion.sh -i
-sudo ./install_wiimotes.sh -i
-sudo ./install_camera.sh -i
-sudo ./install_ups.sh -i
+sudo ./install.sh -i
+sudo ./ups/install.sh -i
 ```
 
 
