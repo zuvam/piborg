@@ -1,24 +1,24 @@
 #!/bin/sh
 #
-# init script for PicoBorgRev based motion control server
+# init script for PicoBorgRev based motor control server
 #
 
 ### BEGIN INIT INFO
-# Provides:		motion
+# Provides:		motor_server
 # Required-Start:
 # Required-Stop:
 # Default-Start:	2 3 4 5
 # Default-Stop:		0 1 6
-# Short-Description:	init script for PicoBorgRev based motion control server
-# Description:		init script for PicoBorgRev based motion control server
+# Short-Description:	init script for PicoBorgRev based motor control server
+# Description:		init script for PicoBorgRev based motor control server
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-NAME=motion
-DAEMON=/usr/local/bin/motion
+NAME=motor_server
+DAEMON=/usr/local/bin/motor_server
 DAEMONARGS="start"
 DAEMONUSER="pi"
-DAEMONMSG="motion control server"
+DAEMONMSG="motor control server"
 STOPSIGNAL=2
 PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/$NAME/$NAME.log
