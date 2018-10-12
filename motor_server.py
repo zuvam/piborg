@@ -78,7 +78,7 @@ class MotorControlServer():
         self.__run__ = Event()
         self.__updated__ = Event()
         self.__timeout__ = Event()
-        self.__funcs__ = dict([(f[25:], getattr(self, f)) for f in dir(self) if f[0:25] == '_MotorControlServer__x__'])
+        self.__funcs__ = dict([(f[25:], getattr(self, f)) for f in dir(self) if f.startswith('_MotorControlServer__x__')])
         self.__pid__ = getpid()
         signal(SIGTERM, self.__sigterm__)
 
@@ -148,7 +148,6 @@ class MotorControlServer():
             try:
                 verb, args, kwargs = conn.recv()
             except:
-                print(str(e))
                 conn.send(Exception('bad request'))
             else:
                 self.__timeout__.set()
@@ -158,7 +157,6 @@ class MotorControlServer():
                     try:
                         conn.send(self.__funcs__[verb](*args, **kwargs))
                     except Exception as e:
-                        print(str(e))
                         conn.send(e)
         conn.close()
 
@@ -224,7 +222,7 @@ class MotorControlServer():
 class MotorController(object):
     """Client for Motor Control Server for DiddyBorg
     Example:
-    from motion import MotorController
+    from motor_server import MotorController
     try:
         list_steps = [(1.0,0),(-1.0,0),(0,1.0),(0,-1.0),(0,0)] # forward, reverse, spin clockwise, spin counter, stop
         with MotorController() as mc:
@@ -237,7 +235,7 @@ class MotorController(object):
         print(e.msg)
 
     Example:
-    from motion import MotorController
+    from motor_server import MotorController
     remote_host='192.168.1.1'
     token='shared authToken'
     try:
@@ -284,7 +282,7 @@ class MotorController(object):
     def __getattr__(self, item):
         """custom attribute getter
         attribute(args) = RPC(args)
-        RPC: send attribute and arguments to Motor Control Server over connection and return recieved object or raise recieved exception
+        RPC: send attribute and arguments to Motor Control Server over connection and return received object or raise received exception
         """
 
         def attribute(*args, **kwargs):
@@ -299,10 +297,10 @@ class MotorController(object):
 if __name__ == '__main__':
     __doc__ = """Command line interface for Motor Control Server
     Usage:
-    motion                        -> display CLI usage
-    motion help|h|-h              -> display CLI and library usage
-    motion start|s|-s             -> start the Motor Control Server (to be used within a start-up script), by default listens on 127.0.0.1:1092
-    motion cmd [nums]             -> RPC execute cmd(*nums) on Motor Control Server and print returned object """
+    motor_server                        -> display CLI usage
+    motor_server help|h|-h              -> display CLI and library usage
+    motor_server start|s|-s             -> start the Motor Control Server (to be used within a start-up script), by default listens on 127.0.0.1:1092
+    motor_server cmd [nums]             -> RPC execute cmd(*nums) on Motor Control Server and print returned object """
     from sys import argv
 
     if len(argv) == 1:
