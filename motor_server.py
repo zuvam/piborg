@@ -73,13 +73,13 @@ class MotorControlServer():
         :param ip_port: port number, default is 1092
         :param token: authkey, default is read from /home/pi/.motion
         """
-        self.__ip, self.__port, self.__token = ip_address, ip_port, token
-        self.__cmds = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
-        self.__run = Event()
-        self.__updated = Event()
-        self.__timeout = Event()
-        self.__funcs = dict([(f[25:], getattr(self, f)) for f in dir(self) if f[0:25] == '_MotorControlServer__x__'])
-        self.__pid = getpid()
+        self.__ip__, self.__port__, self.__token__ = ip_address, ip_port, token
+        self.__cmds__ = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
+        self.__run__ = Event()
+        self.__updated__ = Event()
+        self.__timeout__ = Event()
+        self.__funcs__ = dict([(f[25:], getattr(self, f)) for f in dir(self) if f[0:25] == '_MotorControlServer__x__'])
+        self.__pid__ = getpid()
         signal(SIGTERM, self.__sigterm__)
 
     def start(self):
@@ -92,9 +92,9 @@ class MotorControlServer():
         Wait for heartbeat and watchdog to finish
         """
         # if self.__connect_pbr__: # to be debugged
-        self.__run.set()
-        self.__updated.set()
-        self.__timeout.set()
+        self.__run__.set()
+        self.__updated__.set()
+        self.__timeout__.set()
         heartbeat = Thread(target=self.__heartbeat__)
         watchdog = Thread(target=self.__watchdog__)
         listener = Thread(target=self.__listen__)
@@ -111,9 +111,9 @@ class MotorControlServer():
     def __heartbeat__(self):
         """Send motor PWM and LED state to the PicoBorgRev module when updated, otherwise every HEARTBEAT interval"""
         while read_i2c(GET_FAILSAFE) == 0: write_i2c(SET_FAILSAFE, 1)
-        while self.__run.is_set():
-            if self.__updated.wait(HEARTBEAT): self.__updated.clear()
-            for cmd in self.__cmds: write_i2c(*cmd)
+        while self.__run__.is_set():
+            if self.__updated__.wait(HEARTBEAT): self.__updated__.clear()
+            for cmd in self.__cmds__: write_i2c(*cmd)
         write_i2c(SET_FAILSAFE, 0)
         write_i2c(RESET_EPO, 0)
         write_i2c(SET_A_FWD, 0)
@@ -122,16 +122,16 @@ class MotorControlServer():
 
     def __watchdog__(self):
         """Set motor PWM and LED State to 0 (off) if no interaction for more than TIMEOUT interval"""
-        while self.__run.is_set():
-            if self.__timeout.wait(TIMEOUT):
-                self.__timeout.clear()
+        while self.__run__.is_set():
+            if self.__timeout__.wait(TIMEOUT):
+                self.__timeout__.clear()
             else:
-                self.__cmds = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
+                self.__cmds__ = (SET_A_FWD, 0), (SET_B_FWD, 0), (SET_LED, 0)
 
     def __listen__(self):
         """Start listening for connections and assign handler thread for new connections"""
-        server = Listener((self.__ip, self.__port), authkey=self.__token)
-        while self.__run.is_set():
+        server = Listener((self.__ip__, self.__port__), authkey=self.__token__)
+        while self.__run__.is_set():
             try:
                 connect = server.accept()
                 thread = Thread(target=self.__handle__, args=(connect,))
@@ -148,15 +148,18 @@ class MotorControlServer():
             try:
                 verb, args, kwargs = conn.recv()
             except:
+                print(str(e))
                 conn.send(Exception('bad request'))
-            self.__timeout.set()
-            if verb in ('bye', 'close', 'exit'):
-                inuse = False
             else:
-                try:
-                    conn.send(self.__funcs[verb](*args, **kwargs))
-                except Exception as e:
-                    conn.send(e)
+                self.__timeout__.set()
+                if verb in ('bye', 'close', 'exit'):
+                    inuse = False
+                else:
+                    try:
+                        conn.send(self.__funcs__[verb](*args, **kwargs))
+                    except Exception as e:
+                        print(str(e))
+                        conn.send(e)
         conn.close()
 
     @property
@@ -171,14 +174,14 @@ class MotorControlServer():
 
     def __x__stop(self):
         """send stop event to all active threads, returns pid and number of active threads"""
-        self.__run.clear()
-        self.__timeout.set()
-        self.__updated.set()
-        return ('pid', self.__pid), ('threads', active_count())
+        self.__run__.clear()
+        self.__timeout__.set()
+        self.__updated__.set()
+        return ('pid', self.__pid__), ('threads', active_count())
 
     def __x__status(self):
         """return motor direction and PWM setting, LED state, pid, and number of active threads"""
-        return self.__x__get_velocity() + self.__x__get_led() + (('pid', self.__pid), ('threads', active_count()))
+        return self.__x__get_velocity() + self.__x__get_led() + (('pid', self.__pid__), ('threads', active_count()))
 
     def __x__get_velocity(self):
         """return motor direction and PWM setting"""
@@ -189,9 +192,8 @@ class MotorControlServer():
         """set linear velocity and angular velocity, accept values between -1.0 and 1.0, default angular is 0.0"""
         assert is_norm_one(linear) and is_norm_one(angular)
         pwm_r, pwm_l = norm_pwm(PWM_MAX * (linear + angular)), norm_pwm(PWM_MAX * (linear - angular))
-        self.__cmds = (SET_A_REV, -pwm_r) if pwm_r < 0 else (SET_A_FWD, pwm_r), (SET_B_REV, -pwm_l) if pwm_l < 0 else (
-            SET_B_FWD, pwm_l)
-        self.__updated.set()
+        self.__cmds__ = (SET_A_REV, -pwm_r) if pwm_r < 0 else (SET_A_FWD, pwm_r), (SET_B_REV, -pwm_l) if pwm_l < 0 else (SET_B_FWD, pwm_l)
+        self.__updated__.set()
         return ('linear', linear), ('angular', angular), ('motorA', pwm_r), ('motorB', pwm_l)
 
     def __x__get_led(self):
@@ -201,8 +203,8 @@ class MotorControlServer():
     def __x__set_led(self, on_off_num):
         """set LED state, accept any number 0 -> OFF and non-zero number -> ON"""
         on_off = 1 if on_off_num else 0
-        self.__cmds += (SET_LED, on_off),
-        self.__updated.set()
+        self.__cmds__ += (SET_LED, on_off),
+        self.__updated__.set()
         return ('led', 'ON' if on_off == 1 else 'OFF'),
 
     def __x__get_id(self):
@@ -211,12 +213,12 @@ class MotorControlServer():
 
     def __x__get_pid(self):
         """return pid"""
-        return ('id', self.__pid),
+        return ('id', self.__pid__),
 
     def __x__help(self):
         """return docstrings of available functions"""
         return tuple((n + '(' + ', '.join(f.__code__.co_varnames[1:f.__code__.co_argcount]) + ')', f.__doc__)
-                     for (n, f) in sorted(self.__funcs.items(), key=lambda x: x[1].__code__.co_firstlineno))
+                     for (n, f) in sorted(self.__funcs__.items(), key=lambda x: x[1].__code__.co_firstlineno))
 
 
 class MotorController(object):
