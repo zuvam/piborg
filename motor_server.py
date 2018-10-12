@@ -78,7 +78,7 @@ class MotorControlServer():
         self.__run__ = Event()
         self.__updated__ = Event()
         self.__timeout__ = Event()
-        self.__funcs__ = dict([(f[25:], getattr(self, f)) for f in dir(self) if f.startswith('_MotorControlServer__x__')])
+        self.__funcs__ = dict([(f[24:], getattr(self, f)) for f in dir(self) if f[0:24] == '_MotorControlServer__x__'])
         self.__pid__ = getpid()
         signal(SIGTERM, self.__sigterm__)
 
