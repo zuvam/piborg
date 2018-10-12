@@ -1,24 +1,24 @@
 #!/bin/sh
 #
-# init script for Wiimote Controller PicoBorgRev based motion control server
+# init script for Remote Camera
 #
 
 ### BEGIN INIT INFO
-# Provides:		wiimote
-# Required-Start:       motion
-# Required-Stop:        motion
+# Provides:		camera
+# Required-Start:
+# Required-Stop:
 # Default-Start:	2 3 4 5
 # Default-Stop:		0 1 6
-# Short-Description:	init script for Wiimote controller for PicoBorgRev based motion control server
-# Description:		init script for Wiimote controller for PicoBorgRev based motion control server
+# Short-Description:	init script for camera server
+# Description:		init script for camera server
 ### END INIT INFO
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-NAME=wiimote
-DAEMON=/usr/local/bin/wiimote
-DAEMONARGS="start-wii-controller"
+NAME=camera
+DAEMON=/usr/local/bin/camera
+DAEMONARGS="start"
 DAEMONUSER="pi"
-DAEMONMSG="wiimote for motion control server"
+DAEMONMSG="camera control server"
 STOPSIGNAL=2
 PIDFILE=/var/run/$NAME.pid
 LOGFILE=/var/log/$NAME/$NAME.log

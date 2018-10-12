@@ -1,6 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-"""Motion controller module for DiddyBorg"""
+""" Motion controller module for DiddyBorg """
 from multiprocessing.connection import Listener, Client, AuthenticationError
 from os import getpid
 from signal import signal, SIGTERM
@@ -27,7 +27,7 @@ GET_ID = 0x99  # Get the board identifier
 A_DIR = (0, -1, 1)
 B_DIR = (0, 1, -1)
 
-IP, PORT = '127.0.0.1', 1092  # Default address on which to listen for drive commands
+IP, PORT = '0.0.0.0', 1092  # Default address on which to listen for drive commands
 AUTH_KEY_FILE = '/home/pi/.motion'  # Default authkey for the connection
 with open(AUTH_KEY_FILE, 'r') as auth_file: TOKEN = auth_file.read().replace('\n', '')
 
@@ -92,18 +92,22 @@ class MotionControlServer():
                        Connections authkey authenticated by token
         Wait for heartbeat and watchdog to finish
         """
-        self.__run.set()
-        self.__updated.set()
-        self.__timeout.set()
-        heartbeat = Thread(target=self.__heartbeat__)
-        watchdog = Thread(target=self.__watchdog__)
-        listener = Thread(target=self.__listen__)
-        listener.daemon = True
-        watchdog.start()
-        heartbeat.start()
-        listener.start()
-        heartbeat.join()
-        watchdog.join()
+        if self.__connect_pbr__:
+            self.__run.set()
+            self.__updated.set()
+            self.__timeout.set()
+            heartbeat = Thread(target=self.__heartbeat__)
+            watchdog = Thread(target=self.__watchdog__)
+            listener = Thread(target=self.__listen__)
+            listener.daemon = True
+            watchdog.start()
+            heartbeat.start()
+            listener.start()
+            heartbeat.join()
+            watchdog.join()
+        else:
+            print('check hardware')
+            exit(1)
 
     def __heartbeat__(self):
         """Send motor PWM and LED state to the PicoBorgRev module when updated, otherwise every HEARTBEAT interval"""
@@ -155,6 +159,12 @@ class MotionControlServer():
                 except Exception as e:
                     conn.send(e)
         conn.close()
+
+    @property
+    def __connect_pbr__(self):
+        """return whether i2c module at I2CADDRESS is PicoBorgRev (True) or not (False) based on ID"""
+        i2c_data = read_i2c(GET_ID)
+        return len(i2c_data) == I2C_MAX_LEN and i2c_data[1] == I2C_ID_PICOBORG_REV
 
     def __sigterm__(self, signum, frame):
         """handler function for sigterm"""

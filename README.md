@@ -16,8 +16,8 @@ git clone https://github.com/zuvam/piborg.git
 cd piborg
 sudo ./install_motion.sh -i
 sudo ./install_wiimotes.sh -i
-systemctl status motion
-systemctl status wiimote
+sudo ./install_camera.sh -i
+sudo ./install_ups.sh -i
 ```
 
 
