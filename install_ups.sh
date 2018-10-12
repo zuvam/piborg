@@ -1,7 +1,6 @@
 #!/bin/bash
 if [[ $(id -u) != 0 ]]; then
-    echo -e "usage:\n\t sudo $0 $*"
-    exit 1
+    sudo $0 $*
 elif [[ "$1" == '-u' ]]; then
     service ups stop
     update-rc.d ups remove
