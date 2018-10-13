@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# easy install / uninstall applications using git on raspberry pi
+# script to easy install / uninstall applications using git on raspberry pi
 
 create_service_unit(){
     local REPO_NAME=$1
