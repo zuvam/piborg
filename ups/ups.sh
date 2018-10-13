@@ -28,10 +28,6 @@ test -f $DAEMON || exit 0
 
 case "$1" in
     start)
-        log_daemon_msg "Syncing PIco HW emulated clock" "PIco clock "
-        echo ds1307 0x68 >/sys/class/i2c-adapter/i2c-1/new_device
-        hwclock -s
-        log_end_msg $?
         log_daemon_msg "Starting PIco UPS monitor" "PIco UPS "
         start-stop-daemon --start --background --pidfile $PIDFILE --make-pidfile --chuid $DAEMONUSER --quiet --oknodo \
           --startas /bin/bash -- -c "exec stdbuf -oL -eL $DAEMON $DAEMONARGS >$LOGFILE 2>&1"
