@@ -25,25 +25,8 @@ P_IN, P_OUT = 27, 22
 i2c_bus = SMBus(BUS)
 
 
-def now(): return str(datetime.now())
-
-
-def read_i2c(i2c_addr, offset, read_word):
-    if read_word:
-        val = i2c_bus.read_word_data(i2c_addr, offset)
-    else:
-        val = i2c_bus.read_byte_data(i2c_addr, offset)
-    return int(hex(val).split('x')[1])
-
-
-def stats():
-    return {
-        'power mode': POWER[read_i2c(*MODE)],
-        'LiPO battery voltage': read_i2c(*BATLEVEL) / 100.0,
-        'RPI voltage': read_i2c(*RPILEVEL) / 100.0,
-        'temperature': read_i2c(*TCELCIUS),
-        'timestamp': now()
-    }
+def now():
+    return str(datetime.now())
 
 
 def sigterm_handler(_signo, _stack_frame):
@@ -54,9 +37,7 @@ def sigterm_handler(_signo, _stack_frame):
 
 if __name__ == '__main__':
     signal(SIGTERM, sigterm_handler)
-    if len(argv) == 1 or argv[1] in ('stats', 'status'):
-        print(stats())
-    elif argv[1] == 'start' and getuid() == 0:
+    if argv[1] == 'start' and getuid() == 0:
         print('[{0}] set up pins!'.format(now()))
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
