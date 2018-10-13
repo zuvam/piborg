@@ -190,7 +190,8 @@ class MotorControlServer():
         """set linear velocity and angular velocity, accept values between -1.0 and 1.0, default angular is 0.0"""
         assert is_norm_one(linear) and is_norm_one(angular)
         pwm_r, pwm_l = norm_pwm(PWM_MAX * (linear + angular)), norm_pwm(PWM_MAX * (linear - angular))
-        self.__cmds__ = (SET_A_REV, -pwm_r) if pwm_r < 0 else (SET_A_FWD, pwm_r), (SET_B_REV, -pwm_l) if pwm_l < 0 else (SET_B_FWD, pwm_l)
+        self.__cmds__ = (SET_A_REV, -pwm_r) if pwm_r < 0 else (SET_A_FWD, pwm_r), (
+        SET_B_REV, -pwm_l) if pwm_l < 0 else (SET_B_FWD, pwm_l)
         self.__updated__.set()
         return ('linear', linear), ('angular', angular), ('motorA', pwm_r), ('motorB', pwm_l)
 
