@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # script to easy install / uninstall applications using git on raspberry pi
 
-create_service_unit(){
+function create_service_unit(){
     local REPO_NAME=$1
     shift
     local USER=$1
@@ -31,7 +31,7 @@ create_service_unit(){
     } | sudo tee /etc/systemd/system/${REPO_NAME}.service >/dev/null
 }
 
-install(){
+function install(){
     local REPO_URL=$1
     shift
     local HEADLESS_START=$1
@@ -71,7 +71,7 @@ install(){
     }
 }
 
-uninstall(){
+function uninstall(){
     local REPO_NAME=$1
     [[ -f /etc/systemd/system/${REPO_NAME}.service ]] && {
         for cmd in stop status disable; do
@@ -81,7 +81,7 @@ uninstall(){
     }
 }
 
-purge(){
+function purge(){
     local REPO_NAME=$1
     shift
     local DEPENDENCIES_LIST=$*
@@ -91,7 +91,7 @@ purge(){
     rm -rf ${REPO_NAME}
 }
 
-format_sources(){
+function format_sources(){
     for x in $*; do
         echo ${x}
     done | grep -v 'REPO_URL\|HEADLESS_START\|DEPENDENCIES_LIST\|POST_INSTALL\|USER' | sort -u | tr '\n' '|'
@@ -120,11 +120,12 @@ SOURCES['diddyborg-web REPO_URL']='https://github.com/piborg/diddyborg-web.git'
 SOURCES['diddyborg-web HEADLESS_START']='/usr/bin/python2 metalWeb.py'
 SOURCES['diddyborg-web USER']='root'
 
-SOURCES['PiModules REPO_URL']='https://github.com/piborg/diddyborg.git'
-
 SOURCES['piborg REPO_URL']='https://github.com/zuvam/piborg.git'
 SOURCES['piborg POST_INSTALL']='install.sh'
 
+SOURCES['PiModules REPO_URL']='https://github.com/piborg/diddyborg.git'
+
+SOURCES['pi-timolo REPO_URL']='https://github.com/pageauc/pi-timolo.git'
 
 OPTION=$1
 shift
@@ -157,3 +158,4 @@ else
         $0 --purge [$(format_sources ${!SOURCES[@]})]
     """
 fi
+

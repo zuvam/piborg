@@ -14,8 +14,8 @@ Connect to your raspberrypi, clone this repo and run the install scripts
 ```bash
 git clone https://github.com/zuvam/piborg.git
 cd piborg
-sudo ./install.sh -i
-sudo ./ups/install.sh -i
+./make_headless.sh -e
+./make_headless.sh -e ups root start
 ```
 
 

@@ -99,12 +99,13 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 
-with picamera.PiCamera(resolution='800x600', framerate=30) as camera:
-    output = StreamingOutput()
-    camera.start_recording(output, format='mjpeg')
-    try:
-        address = ('0.0.0.0', 8000)
-        server = StreamingServer(address, StreamingHandler)
-        server.serve_forever()
-    finally:
-        camera.stop_recording()
+if __name__ == '__main__':
+    with picamera.PiCamera(resolution='800x600', framerate=30) as camera:
+        output = StreamingOutput()
+        camera.start_recording(output, format='mjpeg')
+        try:
+            address = ('0.0.0.0', 80)
+            server = StreamingServer(address, StreamingHandler)
+            server.serve_forever()
+        finally:
+            camera.stop_recording()

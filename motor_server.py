@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 """ Motor controller module for DiddyBorg """
 from multiprocessing.connection import Listener, Client, AuthenticationError
-from os import getpid
+from os import getpid, path, system
 from signal import signal, SIGTERM
-from smbus import SMBus
 from threading import Thread, Event, active_count
+
+from smbus import SMBus
 
 I2CBUS, I2CADDRESS = 1, 0x44  # i2cbus number and address of the PiBorgReverse (PBR) board
 HEARTBEAT, TIMEOUT = 0.2, 20  # Time interval to send heartbeat to PBR and silence interval before switching off motors
@@ -29,6 +30,8 @@ B_DIR = (0, 1, -1)
 
 IP, PORT = '0.0.0.0', 1092  # Default address on which to listen for drive commands
 AUTH_KEY_FILE = '/home/pi/.motor_server'  # Default authkey for the connection
+if not path.exists(AUTH_KEY_FILE):
+    system('/usr/bin/openssl rand -base64 -out {} 512'.format(AUTH_KEY_FILE))
 with open(AUTH_KEY_FILE, 'r') as auth_file: TOKEN = auth_file.read().replace('\n', '')
 
 i2c_bus = SMBus(I2CBUS)  # i2c bus used
@@ -191,7 +194,7 @@ class MotorControlServer():
         assert is_norm_one(linear) and is_norm_one(angular)
         pwm_r, pwm_l = norm_pwm(PWM_MAX * (linear + angular)), norm_pwm(PWM_MAX * (linear - angular))
         self.__cmds__ = (SET_A_REV, -pwm_r) if pwm_r < 0 else (SET_A_FWD, pwm_r), (
-        SET_B_REV, -pwm_l) if pwm_l < 0 else (SET_B_FWD, pwm_l)
+            SET_B_REV, -pwm_l) if pwm_l < 0 else (SET_B_FWD, pwm_l)
         self.__updated__.set()
         return ('linear', linear), ('angular', angular), ('motorA', pwm_r), ('motorB', pwm_l)
 
