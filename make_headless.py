@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from __future__ import print_function
-
 from os import chmod, getuid, path, remove, system
 
 unit_template = """[Unit]
@@ -9,7 +7,7 @@ Description={unit_name} headless start
 After=network.target
 
 [Service]
-ExecStart={exec_start} {exec_args}
+ExecStart={exec_start} {exec_args} headless
 WorkingDirectory={working_dir}
 StandardOutput=journal
 StandardError=journal
@@ -35,7 +33,7 @@ def setup_service_unit(executable_file: str, exec_args: str = '', user: str = 'p
 
 def tear_down_service_unit(executable_file: str) -> None:
     unit_name = path.splitext(path.basename(executable_file))[0]
-    for cmd in ('stop', 'status', 'disable'):
+    for cmd in ('stop', 'disable'):
         system('/bin/systemctl {} {}'.format(cmd, unit_name))
     remove('/etc/systemd/system/{}.service'.format(unit_name))
 
@@ -57,9 +55,9 @@ if __name__ == '__main__':
 
     if len(argv) == 2:  # use defaults for targets
         targets = (
-            {'executable_file': 'motor_server.py', 'exec_args': 'start headless', },
-            {'executable_file': 'wiimote.py', 'exec_args': 'start-wii-controller headless'},
-            {'executable_file': 'camera.py', 'user': 'root', 'exec_args': 'headless', },
+            {'executable_file': 'motor_server.py', 'exec_args': 'start', },
+            {'executable_file': 'wiimote.py', 'exec_args': 'start-wii-controller'},
+            {'executable_file': 'camera.py', 'user': 'root', },
         )
     else:  # use command line arguments for targets
         targets = (
