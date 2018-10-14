@@ -121,7 +121,6 @@ SOURCES['diddyborg-web HEADLESS_START']='/usr/bin/python2 metalWeb.py'
 SOURCES['diddyborg-web USER']='root'
 
 SOURCES['piborg REPO_URL']='https://github.com/zuvam/piborg.git'
-SOURCES['piborg POST_INSTALL']='install.sh'
 
 SOURCES['PiModules REPO_URL']='https://github.com/piborg/diddyborg.git'
 
