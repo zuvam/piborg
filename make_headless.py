@@ -29,6 +29,8 @@ def setup_service_unit(executable_file: str, exec_args: str = '', user: str = 'p
                                            working_dir=working_dir, user=user))
     for cmd in ('enable', 'start', 'status'):
         system('/bin/systemctl {} {}'.format(cmd, unit_name))
+    print('{unit_name} will start headless\nto view logs use journalctl -f -u {unit_name}.service --since now'.format(
+        unit_name=unit_name))
 
 
 def tear_down_service_unit(executable_file: str) -> None:
