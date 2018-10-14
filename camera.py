@@ -18,7 +18,7 @@ PAGE = """\
         <style>
             img {
                 border: 1px solid #ddd;
-                border-radius: 4px;
+                border-radius: 5px;
                 padding: 5px;
                 display: block;
                 margin-left: auto;

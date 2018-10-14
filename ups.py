@@ -3,13 +3,14 @@
 # PIco UPS module
 #
 
-from smbus import SMBus
-from RPi import GPIO
-from time import sleep
 from datetime import datetime
-from sys import exit, argv
 from os import system, getuid
 from signal import signal, SIGTERM
+from smbus import SMBus
+from sys import exit, argv
+from time import sleep
+
+from RPi import GPIO
 
 # PIco constants
 BYTE, WORD, BUS = 0, 1, 1

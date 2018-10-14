@@ -311,7 +311,7 @@ if __name__ == '__main__':
         print(__doc__)
     elif argv[1] in ('h', '-h', 'help'):
         print(__doc__)
-        print("Available cmd's:")
+        print("Available commands:")
         try:
             with MotorController() as m:
                 for item in m.help(): print('    {0:<30s}-> {1}'.format(*item))
