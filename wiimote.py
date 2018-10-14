@@ -61,7 +61,7 @@ if __name__ == '__main__':
                             buttons = wii.state['buttons']
                             if buttons - BTNS_SHUTDOWN == 0:
                                 running = restart = False
-                                system('/usr/bin/sudo shutdown -h now')
+                                system('/usr/bin/sudo /sbin/reboot')
                             if buttons - BTNS_DISCONNECT == 0:
                                 running = False
                             if (buttons & BTNS_STOP):
