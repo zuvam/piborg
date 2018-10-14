@@ -59,7 +59,6 @@ if __name__ == '__main__':
                 with MotorController() as mc:
                     while running:
                         try:
-                            print(wii.state)
                             buttons = wii.state['buttons']
                             if buttons - BTNS_SHUTDOWN == 0:
                                 running = restart = False
@@ -78,10 +77,9 @@ if __name__ == '__main__':
                                 angular += 1 if angular < 100 else 0
                             if (buttons & BTNS_LEFT):
                                 angular -= 1 if angular > -100 else 0
-                            if angular != 0 and not (buttons & BTNS_TURN):
+                            if (buttons != 0) or (angular != 0 and not (buttons & BTNS_TURN)):
                                 angular -= abs(angular) / angular
-                                print(mc.set_velocity(linear / 100.0, angular / 100.0))
-                            if buttons != 0:
+                                print(wii.state)
                                 print(mc.set_velocity(linear / 100.0, angular / 100.0))
                             sleep(0.01)
                         except KeyboardInterrupt:
