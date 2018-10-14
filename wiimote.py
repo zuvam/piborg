@@ -86,7 +86,6 @@ if __name__ == '__main__':
                             running = restart = False
                     mc.set_velocity(0.0, 0.0)
                     rumble(wii, 0.2)
-                    wii = None
             except IOError:
                 pass
             except KeyboardInterrupt:
