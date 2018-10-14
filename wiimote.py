@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     wii = None
     linear = angular = 0
-
+    reboot = False
     while restart:
         running = True
         while wii is None and restart:
@@ -61,7 +61,7 @@ if __name__ == '__main__':
                             buttons = wii.state['buttons']
                             if buttons - BTNS_SHUTDOWN == 0:
                                 running = restart = False
-                                system('/usr/bin/sudo /sbin/reboot')
+                                reboot = True
                             if buttons - BTNS_DISCONNECT == 0:
                                 running = False
                             if (buttons & BTNS_STOP):
@@ -90,3 +90,5 @@ if __name__ == '__main__':
                 pass
             except KeyboardInterrupt:
                 running = restart = False
+    if reboot:
+        system('/usr/bin/sudo /sbin/reboot')
