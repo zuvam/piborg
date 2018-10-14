@@ -35,7 +35,10 @@ def tear_down_service_unit(executable_file: str) -> None:
     unit_name = path.splitext(path.basename(executable_file))[0]
     for cmd in ('stop', 'disable'):
         system('/bin/systemctl {} {}'.format(cmd, unit_name))
-    remove('/etc/systemd/system/{}.service'.format(unit_name))
+    try:
+        remove('/etc/systemd/system/{}.service'.format(unit_name))
+    except FileNotFoundError:
+        pass
 
 
 if __name__ == '__main__':
