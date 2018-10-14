@@ -1,11 +1,10 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """ Wiimote controller for DiddiBorg """
+import cwiid
 from os import system
 from signal import signal, SIGTERM
 from time import sleep
-
-import cwiid
 
 from motor_server import MotorController
 
@@ -77,8 +76,9 @@ if __name__ == '__main__':
                                 angular += 1 if angular < 100 else 0
                             if (buttons & BTNS_LEFT):
                                 angular -= 1 if angular > -100 else 0
-                            if (buttons != 0) or (angular != 0 and not (buttons & BTNS_TURN)):
+                            if angular != 0 and not (buttons & BTNS_TURN):
                                 angular -= abs(angular) / angular
+                            if buttons != 0 or angular != 0:
                                 print(wii.state)
                                 print(mc.set_velocity(linear / 100.0, angular / 100.0))
                             sleep(0.01)
